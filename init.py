@@ -12,6 +12,12 @@ class Service:
     def __repr__(self):
         return self.name
 
+    def isolated(self):
+        if self.deps:
+            return False
+        else:
+            return True
+
 
 def dep_resolve(service, resolved, visited):
     """
@@ -56,6 +62,8 @@ if __name__ == "__main__":
     init = Service('init')
     services = {'init': init}
 
+    isolated = []
+
     # At first, we need to init list of our services. 
     # It is assumed to be complete, e.g. if dependency is not in services - error is shown
     for svc in config.keys():
@@ -70,14 +78,23 @@ if __name__ == "__main__":
                 sys.exit(f"Dependency {dep} is not present in list of services")
             dependency = services.get(dep)
             service.addDependency(dependency)
+        if service.isolated():
+            isolated.append(service)
+
 
                
     resolved = []
     dep_resolve(services.get("init"), resolved, [])
+    s = set(isolated)
+    others = [x for x in resolved if x not in s]
 
     if args.action == "start":
-        logger.info("Starting dependencies in order...")
-        print(resolved)
+        logger.info("Starting in parallel")
+        logger.info(isolated)
+        logger.info("Starting in order...")
+        logger.info(others)
     else:
         logger.info("Stopping dependencies in order...")
-        print(resolved[::-1])
+        logger.info(others[::-1])
+        logger.info("Stopping in parallel:")
+        logger.info(isolated)
